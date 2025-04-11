@@ -165,7 +165,11 @@ function toggleSelection(domain, isSelected) {
 
 .content-section {
   display: flex;
+  flex-direction: row;
+  /* Default to side-by-side lists */
   width: 100%;
+  height: 100vh;
+  /* Full height of the viewport */
   background-color: #ffffff;
   padding: 1rem 0;
   box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
@@ -180,7 +184,8 @@ function toggleSelection(domain, isSelected) {
 }
 
 .content-left {
-  border-right: none;
+  border-right: 1px solid #ddd;
+  /* Add border between columns */
 }
 
 h2 {
@@ -255,5 +260,18 @@ li {
 
 .remove-button:hover {
   background-color: #c82333;
+}
+
+/* Responsive styles for mobile */
+@media (max-width: 768px) {
+  .content-section {
+    flex-direction: column;
+    /* Stack lists vertically on smaller screens */
+  }
+
+  .content-left {
+    border-right: none;
+    /* Remove border between columns */
+  }
 }
 </style>
