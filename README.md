@@ -19,29 +19,34 @@ This application allows users to manage email domains by grouping them into "Ava
 
 ## Code Explanation
 
-### Dynamic Filtering (`filteredGroupedEmails`)
-The `filteredGroupedEmails` computed property dynamically filters the `groupedEmails` object based on the search query and selected suggestion.
+### Single Array for Emails
+The application uses a single array of objects (`emails`) to manage all email data. Each object contains:
+- `email`: The email address.
+- `isSelected`: A boolean indicating whether the email belongs to the "Selected" list.
 
-- **Default Behavior**: If no search query or suggestion is selected, it returns all grouped emails.
-- **Filtered Behavior**: If a suggestion is selected, it returns only the emails for the selected domain.
-
-**Syntax**:
-```javascript
-{ [selectedSuggestion.value]: groupedEmails.value[selectedSuggestion.value] }
-```
-- `[selectedSuggestion.value]`: Dynamically sets the property name to the selected domain.
-- `groupedEmails.value[selectedSuggestion.value]`: Retrieves the emails for the selected domain.
+This simplifies the logic by avoiding separate arrays for "Available" and "Selected" lists.
 
 ---
 
-### Moving Between Lists
-- **`moveToSelected(domain)`**: Moves a domain from the "Available" list to the "Selected" list.
-- **`moveToAvailable(domain)`**: Moves a domain back to the "Available" list.
+### Dynamic Filtering
+The filtering logic is handled using computed properties:
+- **`availableEmails`**: Filters emails where `isSelected` is `false`.
+- **`selectedEmails`**: Filters emails where `isSelected` is `true`.
+
+---
+
+### Domain Suggestions
+The `suggestions` computed property dynamically generates a list of unique domains based on the search query. It ensures that only domains matching the query are displayed in the suggestions dropdown.
 
 ---
 
 ### Collapsible State
 The `collapsed` object tracks whether each domain is expanded or collapsed. Clicking on a domain header toggles its state.
+
+---
+
+### Toggle Selection
+The `toggleSelection(domain, isSelected)` function updates the `isSelected` property for all emails in a given domain. This allows seamless movement of domains between the "Available" and "Selected" lists.
 
 ---
 

@@ -11,62 +11,47 @@ const emailData = [
   { email: "mike@hello.com", isSelected: true }
 ];
 
-const groupedEmails = ref(
-  emailData.reduce((acc, { email }) => {
-    const domain = email.split('@')[1];
-    if (!acc[domain]) acc[domain] = [];
-    acc[domain].push(email);
-    return acc;
-  }, {})
-);
+const emails = ref(emailData); // Single array of objects
 
-const collapsed = ref(
-  Object.keys(groupedEmails.value).reduce((acc, domain) => {
-    acc[domain] = true;
-    return acc;
-  }, {})
-);
+const collapsed = ref({}); // Track collapsed state for each domain
+
+// Initialize collapsed state for all domains
+emails.value.forEach(({ email }) => {
+  const domain = email.split('@')[1];
+  if (!collapsed.value[domain]) collapsed.value[domain] = true;
+});
 
 const searchQuery = ref('');
+
+// Suggestions for domains based on the search query
 const suggestions = computed(() => {
   if (!searchQuery.value) return [];
-  return Object.keys(groupedEmails.value).filter(domain =>
+  const domains = [...new Set(emails.value.map(({ email }) => email.split('@')[1]))];
+  return domains.filter(domain =>
     domain.toLowerCase().includes(searchQuery.value.toLowerCase())
   );
 });
 
-const filteredGroupedEmails = computed(() => {
-  if (!searchQuery.value || !selectedSuggestion.value) return groupedEmails.value;
-  return { [selectedSuggestion.value]: groupedEmails.value[selectedSuggestion.value] };
+// Filtered emails for the "Available" list
+const availableEmails = computed(() => {
+  return emails.value.filter(({ email, isSelected }) => {
+    const domain = email.split('@')[1];
+    return !isSelected && (!searchQuery.value || domain.includes(searchQuery.value));
+  });
 });
 
-const selectedSuggestion = ref(null);
+// Filtered emails for the "Selected" list
+const selectedEmails = computed(() => {
+  return emails.value.filter(({ isSelected }) => isSelected);
+});
 
-function selectSuggestion(domain) {
-  selectedSuggestion.value = domain;
-  searchQuery.value = domain;
-  Object.keys(collapsed.value).forEach(key => {
-    collapsed.value[key] = key !== domain;
+// Toggle the selection state of a domain
+function toggleSelection(domain, isSelected) {
+  emails.value.forEach(emailObj => {
+    if (emailObj.email.split('@')[1] === domain) {
+      emailObj.isSelected = isSelected;
+    }
   });
-  suggestions.value = [];
-}
-
-const selectedDomains = ref({});
-
-function moveToSelected(domain) {
-  if (groupedEmails.value[domain]) {
-    selectedDomains.value[domain] = groupedEmails.value[domain];
-    delete groupedEmails.value[domain];
-    delete collapsed.value[domain];
-  }
-}
-
-function moveToAvailable(domain) {
-  if (selectedDomains.value[domain]) {
-    groupedEmails.value[domain] = selectedDomains.value[domain];
-    delete selectedDomains.value[domain];
-    collapsed.value[domain] = true;
-  }
 }
 </script>
 
@@ -74,7 +59,7 @@ function moveToAvailable(domain) {
   <div class="search-container">
     <input type="text" placeholder="Search..." class="search-bar" v-model="searchQuery" />
     <ul v-if="suggestions.length" class="suggestions-dropdown">
-      <li v-for="domain in suggestions" :key="domain" @click="selectSuggestion(domain)">
+      <li v-for="domain in suggestions" :key="domain" @click="searchQuery = domain">
         {{ domain }}
       </li>
     </ul>
@@ -82,28 +67,36 @@ function moveToAvailable(domain) {
   <div class="content-section">
     <div class="content-left">
       <h2>Available</h2>
-      <div v-for="(emails, domain) in filteredGroupedEmails" :key="domain" class="collapsible">
+      <div v-for="domain in [...new Set(availableEmails.map(({ email }) => email.split('@')[1]))]" :key="domain"
+        class="collapsible">
         <div class="collapsible-header" @click="collapsed[domain] = !collapsed[domain]">
           <span>{{ domain }}</span>
-          <button class="add-button" @click.stop="moveToSelected(domain)">+</button>
+          <button class="add-button" @click.stop="toggleSelection(domain, true)">+</button>
         </div>
         <div v-if="!collapsed[domain]" class="collapsible-content">
           <ul>
-            <li v-for="email in emails" :key="email">{{ email }}</li>
+            <li v-for="emailObj in availableEmails.filter(({ email }) => email.split('@')[1] === domain)"
+              :key="emailObj.email">
+              {{ emailObj.email }}
+            </li>
           </ul>
         </div>
       </div>
     </div>
     <div class="content-right">
       <h2>Selected</h2>
-      <div v-for="(emails, domain) in selectedDomains" :key="domain" class="collapsible">
+      <div v-for="domain in [...new Set(selectedEmails.map(({ email }) => email.split('@')[1]))]" :key="domain"
+        class="collapsible">
         <div class="collapsible-header" @click="collapsed[domain] = !collapsed[domain]">
           <span>{{ domain }}</span>
-          <button class="remove-button" @click.stop="moveToAvailable(domain)">-</button>
+          <button class="remove-button" @click.stop="toggleSelection(domain, false)">-</button>
         </div>
         <div v-if="!collapsed[domain]" class="collapsible-content">
           <ul>
-            <li v-for="email in emails" :key="email">{{ email }}</li>
+            <li v-for="emailObj in selectedEmails.filter(({ email }) => email.split('@')[1] === domain)"
+              :key="emailObj.email">
+              {{ emailObj.email }}
+            </li>
           </ul>
         </div>
       </div>
